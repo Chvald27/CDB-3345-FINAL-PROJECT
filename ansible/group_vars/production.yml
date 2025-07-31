@@ -1,0 +1,4 @@
+env: production
+image_tag: v6
+docker_port: 8081
+

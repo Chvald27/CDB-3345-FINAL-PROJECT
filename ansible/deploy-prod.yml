@@ -1,0 +1,44 @@
+---
+- name: Deploy to RHEL EC2 (Production)
+  hosts: production
+  become: true
+
+  tasks:
+    - name: Install Docker on RHEL
+      yum:
+        name: docker
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Disable SELinux temporarily
+      command: setenforce 0
+      ignore_errors: true
+      when: ansible_os_family == "RedHat"
+
+    - name: Pull Flask image
+      docker_image:
+        name: chvald27/flask-webapp
+        tag: v6
+        source: pull
+
+    - name: Run container
+      docker_container:
+        name: flask_webapp_prod
+        image: chvald27/flask-webapp:v6
+        state: started
+        restart_policy: always
+        ports:
+          - "8081:8080"
+        env:
+          SECRET_KEY: "{{ lookup('env', 'SECRET_KEY') }}"
+          DB_USER: "{{ lookup('env', 'DB_USER') }}"
+          DB_PASSWORD: "{{ lookup('env', 'DB_PASSWORD') }}"
+          DB_HOST: "{{ lookup('env', 'DB_HOST') }}"
+          DB_NAME: "{{ lookup('env', 'DB_NAME') }}"
+

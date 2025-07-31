@@ -1,0 +1,40 @@
+---
+- name: Deploy to Ubuntu EC2 instance (Testing)
+  hosts: testing
+  become: true
+
+  tasks:
+    - name: Install Docker on Ubuntu
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull Flask image
+      docker_image:
+        name: chvald27/flask-webapp
+        tag: v6
+        source: pull
+
+    - name: Run container
+      docker_container:
+        name: flask_webapp_test
+        image: chvald27/flask-webapp:v6
+        state: started
+        restart_policy: always
+        ports:
+          - "8081:8080"
+        env:
+          SECRET_KEY: "{{ lookup('env', 'SECRET_KEY') }}"
+          DB_USER: "{{ lookup('env', 'DB_USER') }}"
+          DB_PASSWORD: "{{ lookup('env', 'DB_PASSWORD') }}"
+          DB_HOST: "{{ lookup('env', 'DB_HOST') }}"
+          DB_NAME: "{{ lookup('env', 'DB_NAME') }}"
+
