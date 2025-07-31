@@ -1,4 +1,4 @@
-kname: Flask App CI
+name: Flask App CI
 
 on:
   push:
