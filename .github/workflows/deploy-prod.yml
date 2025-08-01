@@ -23,7 +23,7 @@ jobs:
 
       - name: Test SSH Connection (optional)
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/Linux2025.pem ubuntu@35.182.237.100 'echo SSH connection success!'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/Linux2025.pem ec2-user@35.182.237.100 'echo SSH connection success!'
 
       - name: Run Ansible Playbook
         uses: dawidd6/action-ansible-playbook@v2
