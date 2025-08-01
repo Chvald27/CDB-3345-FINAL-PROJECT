@@ -4,9 +4,24 @@
   become: true
 
   tasks:
+    - name: Install required packages for Docker repo
+      yum:
+        name:
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Add Docker CE repo for RHEL
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+      when: ansible_os_family == "RedHat"
+
     - name: Install Docker on RHEL
       yum:
-        name: docker
+        name: docker-ce
         state: present
       when: ansible_os_family == "RedHat"
 
