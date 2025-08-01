@@ -1,41 +1,65 @@
-name: Deploy to Production
+---
+- name: Deploy to RHEL EC2 (Production)
+  hosts: production
+  become: true
 
-on:
-  push:
-    branches: [main]
+  tasks:
+    - name: Install required packages for managing repos
+      yum:
+        name: yum-utils
+        state: present
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    - name: Add Docker CE repository
+      get_url:
+        url: https://download.docker.com/linux/rhel/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+        mode: '0644'
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Install Docker CE and plugins
+      yum:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
 
-      - name: Create SSH key file
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/Linux2025.pem
-          chmod 600 ~/.ssh/Linux2025.pem
+    - name: Reload systemd
+      command: systemctl daemon-reexec
 
-      - name: Disable Ansible host key checking
-        run: echo "ANSIBLE_HOST_KEY_CHECKING=False" >> $GITHUB_ENV
+    - name: Reload systemd units
+      command: systemctl daemon-reload
 
-      - name: Test SSH Connection (optional)
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/Linux2025.pem ec2-user@35.182.237.100 'echo SSH connection success!'
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
 
-      - name: Run Ansible Playbook
-        uses: dawidd6/action-ansible-playbook@v2
-        with:
-          playbook: ansible/deploy-prod.yml
-          options: 
-            --inventory ansible/inventory.ini
-            --extra-vars "ansible_python_interpreter=/usr/bin/python3"
+    - name: Disable SELinux temporarily (non-fatal)
+      command: setenforce 0
+      ignore_errors: true
+      when: ansible_os_family == "RedHat"
+
+    - name: Pull Flask image
+      docker_image:
+        name: chvald27/flask-webapp
+        tag: v6
+        source: pull
+
+    - name: Run container
+      docker_container:
+        name: flask_webapp_prod
+        image: chvald27/flask-webapp:v6
+        state: started
+        restart_policy: always
+        ports:
+          - "8081:8080"
         env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_NAME: ${{ secrets.DB_NAME }}
+          SECRET_KEY: "{{ lookup('env', 'SECRET_KEY') }}"
+          DB_USER: "{{ lookup('env', 'DB_USER') }}"
+          DB_PASSWORD: "{{ lookup('env', 'DB_PASSWORD') }}"
+          DB_HOST: "{{ lookup('env', 'DB_HOST') }}"
+          DB_NAME: "{{ lookup('env', 'DB_NAME') }}"
 
