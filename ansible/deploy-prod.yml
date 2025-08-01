@@ -6,14 +6,16 @@
   tasks:
     - name: Install required packages for managing repos
       yum:
-        name: yum-utils
+        name:
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
         state: present
 
     - name: Add Docker CE repository
       get_url:
         url: https://download.docker.com/linux/rhel/docker-ce.repo
         dest: /etc/yum.repos.d/docker-ce.repo
-        mode: '0644'
 
     - name: Install Docker CE and dependencies
       yum:
@@ -23,15 +25,17 @@
           - containerd.io
           - docker-buildx-plugin
           - docker-compose-plugin
-          - iptables
         state: present
 
-    - name: Link iptables to legacy
-      alternatives:
-        name: iptables
-        path: /usr/sbin/iptables-legacy
+    - name: Create Docker daemon config to disable iptables (use nftables)
+      copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "iptables": false
+          }
 
-    - name: Reload systemd manager configuration
+    - name: Reload systemd
       command: systemctl daemon-reexec
 
     - name: Reload systemd units
