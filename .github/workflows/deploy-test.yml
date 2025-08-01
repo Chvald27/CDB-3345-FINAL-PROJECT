@@ -29,8 +29,9 @@ jobs:
         uses: dawidd6/action-ansible-playbook@v2
         with:
           playbook: ansible/deploy-test.yml
-          inventory: ansible/inventory.ini
-          options: --extra-vars "ansible_python_interpreter=/usr/bin/python3"
+          options: 
+            --inventory ansible/inventory.ini
+            --extra-vars "ansible_python_interpreter=/usr/bin/python3"
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DB_USER: ${{ secrets.DB_USER }}
