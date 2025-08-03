@@ -1,56 +1,21 @@
 ---
-- name: Deploy to RHEL EC2 (Production)
+- name: Deploy to Ubuntu2 EC2 instance (Production)
   hosts: production
   become: true
 
   tasks:
-    - name: Install required packages for managing repos
-      yum:
-        name:
-          - yum-utils
-          - device-mapper-persistent-data
-          - lvm2
+    - name: Install Docker on Ubuntu
+      apt:
+        name: docker.io
         state: present
-
-    - name: Add Docker CE repository
-      get_url:
-        url: https://download.docker.com/linux/rhel/docker-ce.repo
-        dest: /etc/yum.repos.d/docker-ce.repo
-
-    - name: Install Docker CE and dependencies
-      yum:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        state: present
-
-    - name: Create Docker daemon config to disable iptables (use nftables)
-      copy:
-        dest: /etc/docker/daemon.json
-        content: |
-          {
-            "iptables": false
-          }
-
-    - name: Reload systemd
-      command: systemctl daemon-reexec
-
-    - name: Reload systemd units
-      command: systemctl daemon-reload
+        update_cache: yes
+      when: ansible_os_family == "Debian"
 
     - name: Start and enable Docker
       service:
         name: docker
         state: started
         enabled: true
-
-    - name: Disable SELinux temporarily
-      command: setenforce 0
-      ignore_errors: true
-      when: ansible_os_family == "RedHat"
 
     - name: Pull Flask image
       docker_image:
@@ -60,7 +25,7 @@
 
     - name: Run container
       docker_container:
-        name: flask_webapp_prod
+        name: flask_webapp_test
         image: chvald27/flask-webapp:v6
         state: started
         restart_policy: always

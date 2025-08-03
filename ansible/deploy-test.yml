@@ -1,5 +1,5 @@
 ---
-- name: Deploy to Ubuntu EC2 instance (Testing)
+- name: Deploy to Ubuntu1 EC2 instance (Testing)
   hosts: testing
   become: true
 
