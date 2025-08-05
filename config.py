@@ -5,7 +5,7 @@ class Config:
 
     DB_USER = os.environ["DB_USER", "postgres"]
     DB_PASSWORD = os.environ["DB_PASSWORD", "DevOps2024*"]
-    DB_HOST = os.environ["DB_HOST", "database-cdb-3375-final-project.cl2gqc6scvwd.ca-central-1.rds.amazonaws.com"]
+    DB_HOST = os.environ["DB_HOST", "localhost"]
     DB_NAME = os.environ["DB_NAME", "webappdb"]
 
     SQLALCHEMY_DATABASE_URI = (
