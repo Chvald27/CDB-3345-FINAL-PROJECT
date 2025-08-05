@@ -48,7 +48,7 @@ jobs:
     - name: Run unit tests and save output
       run: |
         mkdir -p test-results
-        python -m unittest discover tests > test-results/unit-test.log || true
+        python -m unittest discover -v tests | tee test-results/unit-test.log
 
     - name: Upload test log artifact
       uses: actions/upload-artifact@v4
